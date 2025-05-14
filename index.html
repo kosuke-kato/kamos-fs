@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kamos FS プロトタイプ</title>
+    <script src="/__/firebase/9.23.0/firebase-app-compat.js"></script> 
+    <script src="/__/firebase/9.23.0/firebase-functions-compat.js"></script> 
+    <script src="/__/firebase/init.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         /* Kamos Design System (v0.4.0準拠 - 抜粋・簡易版) */
@@ -118,7 +121,7 @@
 
         .kds-title-subsection { /* For table titles / subtitles within cards */
             font-size: var(--kds-font-size-xl);
-            font-weight: var(--kds-font-weight-medium); /* KDSではsemiboldだが、ここではmediumに */
+            font-weight: var(--kds-font-weight-medium); 
             color: var(--kds-color-text-default);
             margin-bottom: var(--kds-space-3);
         }
@@ -152,7 +155,7 @@
                         box-shadow var(--kds-transition-duration) var(--kds-transition-timing-function);
         }
         .kds-textarea {
-            min-height: 80px; /* rows="4" 相当 */
+            min-height: 80px; 
         }
 
         .kds-input:focus,
@@ -188,58 +191,66 @@
             outline-offset: 2px;
             box-shadow: 0 0 0 3px var(--kds-color-focus-ring);
         }
+        .kds-button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            background-color: var(--kds-color-text-subtle);
+        }
 
         .kds-table-wrapper {
             overflow-x: auto;
         }
         .kds-table {
             min-width: 100%;
-            border-collapse: collapse; /* KDSでは通常 separate だが、ここではcollapse */
+            border-collapse: collapse; 
             margin-bottom: var(--kds-space-4);
         }
 
         .kds-table th,
         .kds-table td {
-            padding: var(--kds-space-3) var(--kds-space-4); /* px-6 py-3, py-4 相当に調整 */
+            padding: var(--kds-space-3) var(--kds-space-4); 
             text-align: left;
             font-size: var(--kds-font-size-sm);
             border-bottom: 1px solid var(--kds-color-border-subtle);
+            vertical-align: top; /* セルの内容を上揃えに */
         }
 
         .kds-table th {
             background-color: var(--kds-color-background-muted);
             color: var(--kds-color-text-muted);
-            font-weight: var(--kds-font-weight-medium); /* KDSではfont-medium text-gray-500 uppercase tracking-wider */
+            font-weight: var(--kds-font-weight-medium); 
             text-transform: uppercase;
             letter-spacing: 0.05em;
         }
         .kds-table td {
             color: var(--kds-color-text-default);
-            /* whitespace-nowrap はケースバイケースなので削除 */
         }
-        .kds-table td.kds-table-cell-aspect-label { /* 観点ラベルのセル */
+        .kds-table td.kds-table-cell-aspect-label { 
             font-weight: var(--kds-font-weight-medium);
             background-color: var(--kds-color-background-muted);
+            white-space: nowrap; /* 関係性ラベルが改行されないように */
         }
 
         .kds-result-section {
             margin-top: var(--kds-space-8);
         }
         
-        .kds-matrix-cell-container { /* 各マトリックスセル内のコンテナ */
-            /* 必要に応じてスタイル追加 */
+        .kds-matrix-cell-container { 
+            min-height: 60px; /* セルの最小高さを確保して見やすくする */
         }
 
-        .kds-matrix-cell-title { /* 各マトリックスセル内の問い（タイトル） */
+        .kds-matrix-cell-title { 
             font-size: var(--kds-font-size-xs);
             font-weight: var(--kds-font-weight-medium);
             color: var(--kds-color-primary);
             margin-bottom: var(--kds-space-1);
+            word-break: break-all; /* 長いプロンプトがはみ出ないように */
         }
-        .kds-matrix-cell-content { /* 各マトリックスセル内のAI応答 */
+        .kds-matrix-cell-content { 
             font-size: var(--kds-font-size-sm);
             color: var(--kds-color-text-muted);
             line-height: var(--kds-line-height-relaxed);
+            white-space: pre-wrap; /* 改行やスペースを保持して表示 */
         }
         
         .hidden {
@@ -256,7 +267,7 @@
     <div class="container">
         <header>
             <h1 class="kds-title-page">Kamos FS プロトタイプ</h1>
-            <p class="kds-title-page-description">分析対象の情報を入力し、Kamos FSフレームワークに基づく分析結果のイメージを確認します。</p>
+            <p class="kds-title-page-description">分析対象の情報を入力し、Kamos FSフレームワークに基づく分析結果を確認します。</p>
         </header>
 
         <div class="kds-card">
@@ -271,7 +282,7 @@
         </div>
 
         <div id="result-area" class="kds-result-section hidden">
-            <h2 class="kds-title-section">Kamos FS 分析結果（イメージ）</h2>
+            <h2 class="kds-title-section">Kamos FS 分析結果</h2>
             
             <div class="kds-card">
                 <h3 class="kds-title-subsection">Kamos D: プロジェクト全体像</h3>
@@ -333,171 +344,217 @@
         </div>
     </div>
 
-    <script>
-        // Kamos FSのフレームワーク定義（project-design.jsonから抜粋・簡略化）
-        const kamosFsFramework = {
-            "kamos-d": {
-                title: "Kamos D: プロジェクト全体像",
-                rows: [
-                    { id: "aspect_a", label: "目的/パーパス" },
-                    { id: "aspect_b", label: "コアバリュー" },
-                    { id: "aspect_c", label: "目指す美学/品質基準" },
-                    { id: "aspect_d", label: "参照する巨人/インスピレーション" },
-                    { id: "aspect_e", label: "独自性/ポジショニング" }
-                ],
-                columns: [
-                    { id: "cam", label: "CAM (規範・着眼点)" },
-                    { id: "gsa", label: "GSA (方法論・プロセス)" },
-                    { id: "dte", label: "DTE (目標・実践領域)" }
-                ],
-                prompts: { // 各セルに対応するプロンプト（問い）の例
-                    "aspect_a_cam": "この企画で「実現したいこと」は？ (より詳細なプロジェクトのビジョン、解決したい具体的な課題、ターゲットとする美意識のレベルなど)",
-                    "aspect_a_gsa": "どうやって「価値を生む」？ (具体的な共創手法、AIの活用範囲と役割、価値変容の具体的なプロセスステップなど)",
-                    "aspect_a_dte": "最終的に「何を作る」？目標は？ (具体的なアウトプットの仕様、提供する体験の詳細、定量的・定性的な目標値など)",
-                    "aspect_b_cam": "どんな「ゆずれない想い」がある？ (プロジェクトの倫理観、守りたい伝統や価値観、排除したい要素など)",
-                    "aspect_b_gsa": "何がどう「変わる」ことを目指す？ (ターゲット層の具体的な行動変容、社会システムの変化、意識変革の段階など)",
-                    "aspect_b_dte": "これは「誰のため」？ (具体的なペルソナ、受益者の範囲と優先順位、間接的な受益者など)",
-                    // ... 他のプロンプトも同様に定義 (以下簡略化のため省略)
-                }
-            },
-            "kamos-il": {
-                title: "Kamos IL: 関係性評価",
-                rows: [
-                  { "id": "rel_1", "label": "1. わたし ↔ パートナー" },
-                  { "id": "rel_2", "label": "2. パートナー ↔ クライアント" },
-                  { "id": "rel_3", "label": "3. クライアント ↔ 生活者" },
-                  { "id": "rel_4", "label": "4. 生活者 ↔ 社会" },
-                  { "id": "rel_5", "label": "5. 社会 ↔ わたし" },
-                  { "id": "rel_6", "label": "6. わたし ↔ クライアント" }
-                ],
-                columns: [
-                    { id: "cam", label: "CAM (規範・着眼点)" },
-                    { id: "gsa", label: "GSA (方法論・プロセス)" },
-                    { id: "dte", label: "DTE (目標・実践領域)" }
-                ],
-                prompts: { /* ... */ }
-            },
-            "kamos-es": {
-                title: "Kamos ES: エコシステム進化マップ",
-                rows: [
-                  { "id": "aspect_cam", "label": "CAM (価値観/規範)" },
-                  { "id": "aspect_gsa", "label": "GSA (プロセス/方法論)" },
-                  { "id": "aspect_dte", "label": "DTE (成果/現実)" },
-                  { "id": "aspect_stakeholder", "label": "主要ステークホルダー (役割/関係性)" },
-                  { "id": "aspect_challenge", "label": "主な挑戦 (課題/機会)" }
-                ],
-                columns: [
-                  { "id": "phase_1", "label": "Phase 1: 再定義/準備期" },
-                  { "id": "phase_2", "label": "Phase 2: 構築/発信期" },
-                  { "id": "phase_3", "label": "Phase 3: 実践/展開期" }
-                ],
-                prompts: { /* ... */ }
+   <script>
+ // public/index.html 内の <script> タグ
+    
+  let kamosFsFramework = {}; 
+    const analyzeButton = document.getElementById('analyze-button');
+    const analysisTargetInput = document.getElementById('analysis-target');
+    const resultArea = document.getElementById('result-area');
+    let functionsInstance; 
+    
+    async function loadFrameworkDefinition() {
+        try {
+            // publicディレクトリに kamosFsFramework.json を配置する場合
+            // このファイルパスは、index.htmlからの相対パスです。
+            // index.html と kamosFsFramework.json が同じ public ディレクトリにあれば、これでOKです。
+            const response = await fetch('./kamosFsFramework.json'); 
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
             }
-        };
+            kamosFsFramework = await response.json();
+            console.log("Kamos FS Framework loaded successfully:", kamosFsFramework);
+        } catch (error) {
+            console.error("Could not load Kamos FS Framework:", error);
+            alert("フレームワーク定義(kamosFsFramework.json)の読み込みに失敗しました。\npublicフォルダに正しく配置されているか、JSON形式が正しいか確認してください。\nエラー: " + error.message);
+            // エラー時でもアプリがクラッシュしないように、また構造を保つために空の定義を設定
+            kamosFsFramework = { 
+                "kamos-d": { title: "Kamos D", rows: [], columns: [], prompts: {} }, 
+                "kamos-il": { title: "Kamos IL", rows: [], columns: [], prompts: {} }, 
+                "kamos-es": { title: "Kamos ES", rows: [], columns: [], prompts: {} } 
+            };
+        }
+    }
 
-        const analyzeButton = document.getElementById('analyze-button');
-        const analysisTargetInput = document.getElementById('analysis-target');
-        const resultArea = document.getElementById('result-area');
+    // DOMが読み込まれた後にFirebase Functionsを初期化し、フレームワーク定義をロード
+    document.addEventListener('DOMContentLoaded', async () => {
+        try {
+            // Firebase SDKが初期化されていることを確認してからfunctionsインスタンスを取得
+            // `firebase.app()` の存在を確認することで、init.js がロードされ、アプリが初期化されたかを確認
+            if (typeof firebase !== 'undefined' && typeof firebase.app === 'function' && firebase.apps.length > 0 && typeof firebase.functions === 'function') {
+                functionsInstance = firebase.functions();
+                console.log("Firebase Functions initialized successfully.");
+            } else {
+                console.error("Firebase SDK (app or functions) not fully loaded or initialized when trying to get functions instance.");
+                alert("Firebaseの初期化に問題があります。SDKの読み込みや設定を確認してください。ページをリロードしてみてください。");
+                return; // 初期化失敗時は以降の処理を中断
+            }
+        } catch (e) {
+            console.error("Error initializing Firebase Functions:", e);
+            alert(`Firebase Functionsの初期化に失敗しました: ${e.message} 設定を確認してください。`);
+            return; // 初期化失敗時は以降の処理を中断
+        }
+        
+        await loadFrameworkDefinition(); // フレームワーク定義をロード
 
-        analyzeButton.addEventListener('click', async () => {
-            const targetText = analysisTargetInput.value.trim();
-            if (!targetText) {
-                // よりKDSらしいメッセージ表示を検討 (例: モーダルやインラインメッセージ)
-                alert('分析対象を入力してください。');
+        // analyzeButtonのイベントリスナー設定 (フレームワークロード後)
+        if (analyzeButton) {
+            analyzeButton.addEventListener('click', async () => {
+                if (!functionsInstance) {
+                    alert("Firebase Functionsが初期化されていません。ページリロード後、再度お試しください。");
+                    return;
+                }
+                const targetText = analysisTargetInput.value.trim();
+                if (!targetText) {
+                    alert('分析対象を入力してください。');
+                    return;
+                }
+
+                analyzeButton.disabled = true; 
+                analyzeButton.textContent = "分析中...";
+                resultArea.classList.remove('hidden');
+                
+                const matricesToRender = [
+                    { id: 'kamos-d-matrix', dataKey: 'kamos-d' },
+                    { id: 'kamos-il-matrix', dataKey: 'kamos-il' },
+                    { id: 'kamos-es-matrix', dataKey: 'kamos-es' }
+                ];
+
+                // 各マトリックスのテーブルボディに初期ローディングメッセージ表示
+                matricesToRender.forEach(matrixInfo => {
+                    const matrixData = kamosFsFramework[matrixInfo.dataKey];
+                    const tableBody = document.getElementById(matrixInfo.id);
+                    if (tableBody && matrixData && matrixData.columns) { // matrixData.columns の存在も確認
+                        const colspan = matrixData.columns.length + 1;
+                        tableBody.innerHTML = `<tr><td colspan="${colspan}">分析中 (${matrixData.title.split(":")[0]})...</td></tr>`;
+                    } else if (tableBody) {
+                        // matrixDataまたはcolumnsがない場合のエラー表示
+                         tableBody.innerHTML = `<tr><td colspan="4">フレームワークデータエラー (${matrixInfo.dataKey})</td></tr>`;
+                    }
+                });
+                
+                try {
+                    // API呼び出しを逐次実行
+                    for (const matrixInfo of matricesToRender) {
+                        // kamosFsFramework と matrixInfo.dataKey の存在確認を強化
+                        if (Object.keys(kamosFsFramework).length === 0 || 
+                            !kamosFsFramework[matrixInfo.dataKey] ||
+                            !kamosFsFramework[matrixInfo.dataKey].rows || // rows, columns, prompts の存在も確認
+                            !kamosFsFramework[matrixInfo.dataKey].columns ||
+                            !kamosFsFramework[matrixInfo.dataKey].prompts) {
+                            alert(`フレームワーク定義 (${matrixInfo.dataKey}) が不完全か、正しく読み込まれていません。`);
+                            console.error(`Framework data for ${matrixInfo.dataKey} is missing, incomplete, or kamosFsFramework is not loaded.`);
+                            const tableBody = document.getElementById(matrixInfo.id);
+                            if(tableBody) {
+                                // 列数が不明な場合でもcolspanが定義されるように調整
+                                const columnsLength = (kamosFsFramework[matrixInfo.dataKey] && kamosFsFramework[matrixInfo.dataKey].columns) ? kamosFsFramework[matrixInfo.dataKey].columns.length : 3;
+                                const colspan = columnsLength + 1; 
+                                tableBody.innerHTML = `<tr><td colspan="${colspan}">フレームワーク定義エラー (${matrixInfo.dataKey})</td></tr>`;
+                            }
+                            continue; // 次のマトリックスへ
+                        }
+                        await renderMatrixWithApi(matrixInfo.id, kamosFsFramework[matrixInfo.dataKey], targetText);
+                    }
+                } catch (error) {
+                    console.error("An error occurred during overall matrix rendering process:", error);
+                    alert("分析処理中にエラーが発生しました。詳細はブラウザのコンソールを確認してください。");
+                } finally {
+                    analyzeButton.disabled = false; 
+                    analyzeButton.textContent = "分析実行";
+                }
+            });
+        } else {
+            console.error("Analyze button not found.");
+        }
+    });
+    
+    /**
+     * 指定されたIDのtbody要素にマトリックスを描画する関数 (API呼び出し版)
+     */
+    async function renderMatrixWithApi(tableBodyId, matrixData, analysisTarget) {
+        const tableBody = document.getElementById(tableBodyId);
+        // matrixData とその必須プロパティの存在をより厳密にチェック
+        if (!matrixData || !matrixData.columns || !matrixData.rows || !matrixData.prompts || !matrixData.title) { 
+            console.error("Invalid or incomplete matrixData for", tableBodyId, ":", matrixData);
+            if(tableBody) tableBody.innerHTML = `<tr><td colspan="4">フレームワークデータ不備 (${tableBodyId})</td></tr>`;
+            return;
+        }
+        const colspan = matrixData.columns.length + 1;
+        // ローディングメッセージは呼び出し側で設定済みだが、念のためここでも設定
+        if(tableBody) tableBody.innerHTML = `<tr><td colspan="${colspan}">分析中 (${matrixData.title.split(":")[0]})...</td></tr>`;
+    
+        try {
+            if (!functionsInstance) {
+                console.error("functionsInstance is not initialized for " + tableBodyId);
+                if(tableBody) tableBody.innerHTML = `<tr><td colspan="${colspan}">エラー: Firebase Functions未初期化 (${tableBodyId})</td></tr>`;
+                return;
+            }
+            const callKamosFsAnalysis = functionsInstance.httpsCallable('callKamosFsAnalysis');
+            
+            const promptsForThisMatrix = matrixData.prompts; // このマトリックスの全プロンプトを渡す
+            if (!promptsForThisMatrix || Object.keys(promptsForThisMatrix).length === 0) {
+                console.warn(`No prompts defined for matrix: ${matrixData.title}`);
+                if(tableBody) tableBody.innerHTML = `<tr><td colspan="${colspan}">このマトリックスのプロンプトが定義されていません。</td></tr>`;
                 return;
             }
 
-            resultArea.classList.remove('hidden');
-            
-            // Kamos D マトリックスの描画
-            renderMatrix('kamos-d-matrix', kamosFsFramework['kamos-d'], targetText);
-            // Kamos IL マトリックスの描画
-            renderMatrix('kamos-il-matrix', kamosFsFramework['kamos-il'], targetText);
-            // Kamos ES マトリックスの描画
-            renderMatrix('kamos-es-matrix', kamosFsFramework['kamos-es'], targetText);
-        });
+            console.log(`[Frontend] Calling Cloud Function for ${matrixData.title} with target: "${analysisTarget}"`);
+            // console.log("[Frontend] Sending prompts:", promptsForThisMatrix); // デバッグ用
 
-        /**
-         * 指定されたIDのtbody要素にマトリックスを描画する関数
-         * @param {string} tableBodyId - 描画対象のtbody要素のID
-         * @param {object} matrixData - マトリックスの行・列・プロンプト定義
-         * @param {string} analysisTarget - 分析対象のテキスト (将来的にAI連携時に使用)
-         */
-        async function renderMatrix(tableBodyId, matrixData, analysisTarget) {
-            const tableBody = document.getElementById(tableBodyId);
-            tableBody.innerHTML = ''; // 既存の内容をクリア
+            const response = await callKamosFsAnalysis({ 
+                analysisTarget: analysisTarget,
+                specificPrompts: promptsForThisMatrix // バックエンドはこれを {cellId: promptText} の形で受け取る
+            });
+            
+            const apiResults = response.data.results; // バックエンドからは {cellId: "分析結果", ...} の形で返る想定
+            console.log(`[Frontend] Received API results for ${matrixData.title}:`, apiResults);
+
+            if(tableBody) tableBody.innerHTML = ''; // 既存の内容をクリア
 
             for (const row of matrixData.rows) {
                 const tr = document.createElement('tr');
-                
                 const tdAspect = document.createElement('td');
                 tdAspect.classList.add('kds-table-cell-aspect-label');
                 tdAspect.textContent = row.label;
                 tr.appendChild(tdAspect);
-
+    
                 for (const col of matrixData.columns) {
                     const tdCell = document.createElement('td');
-                    const cellId = `${row.id}_${col.id}`;
+                    const cellId = `${row.id}_${col.id}`; // 例: "aspect_a_cam"
                     
-                    // 各セルにタイトル（問い）と内容（AI応答のプレースホルダー）を生成
                     const cellContainer = document.createElement('div');
                     cellContainer.classList.add('kds-matrix-cell-container');
-
+    
                     const promptTitle = document.createElement('div');
                     promptTitle.classList.add('kds-matrix-cell-title');
-                    // matrixData.prompts から対応するプロンプトを取得 (存在すれば)
-                    const promptText = matrixData.prompts && matrixData.prompts[cellId] ? matrixData.prompts[cellId] : `問い: ${row.label} × ${col.label}`;
-                    promptTitle.textContent = promptText.length > 50 ? promptText.substring(0, 50) + "..." : promptText; // 長すぎる場合は省略
-
-                    const aiResponsePlaceholder = document.createElement('div');
-                    aiResponsePlaceholder.classList.add('kds-matrix-cell-content');
-                    // ここで実際にGemini APIを呼び出し、結果を表示する (プロトタイプでは固定テキスト)
-                    // const response = await callGeminiApi(analysisTarget, promptText);
-                    // aiResponsePlaceholder.textContent = response;
-                    aiResponsePlaceholder.textContent = `[${analysisTarget}に関する${row.label}の${col.label}についてのAI分析結果がここに表示されます。これはプロトタイプのダミーテキストです。実際のAPI連携時には、より詳細な分析内容に置き換わります。例えば、具体的な戦略や考慮事項、潜在的なリスクなどが含まれるでしょう。]`;
+                    // matrixData.prompts[cellId] が存在するか確認
+                    const promptText = matrixData.prompts[cellId] ? matrixData.prompts[cellId] : `(プロンプト定義なし: ${cellId})`;
+                    promptTitle.textContent = promptText.length > 80 ? promptText.substring(0, 80) + "..." : promptText;
+    
+                    const aiResponseContent = document.createElement('div');
+                    aiResponseContent.classList.add('kds-matrix-cell-content');
+                    
+                    // apiResults がオブジェクトであり、かつ cellId のキーが存在するか確認
+                    if (apiResults && typeof apiResults === 'object' && apiResults.hasOwnProperty(cellId)) { 
+                         aiResponseContent.textContent = apiResults[cellId]; 
+                    } else {
+                        aiResponseContent.textContent = `[結果なし]`;
+                        console.warn(`No analysis result for cellId: ${cellId} in matrix ${matrixData.title}. API results received:`, apiResults);
+                    }
                     
                     cellContainer.appendChild(promptTitle);
-                    cellContainer.appendChild(aiResponsePlaceholder);
+                    cellContainer.appendChild(aiResponseContent);
                     tdCell.appendChild(cellContainer);
                     tr.appendChild(tdCell);
                 }
-                tableBody.appendChild(tr);
+                if(tableBody) tableBody.appendChild(tr);
             }
+    
+        } catch (error) {
+            console.error(`Error in renderMatrixWithApi for ${tableBodyId}:`, error);
+            if(tableBody) tableBody.innerHTML = `<tr><td colspan="${colspan}">分析エラー (${matrixData.title.split(":")[0]}): ${error.message}</td></tr>`;
         }
-
-        // ダミーのGemini API呼び出し関数 (将来的に実装)
-        // async function callGeminiApi(target, prompt) {
-        //     // ここでGoogle Cloud Functions経由でGemini APIを呼び出す処理を実装
-        //     console.log(`Calling Gemini API for target: "${target}" with prompt: "${prompt}"`);
-        //     // 実際のAPIコールをシミュレート
-        //     await new Promise(resolve => setTimeout(resolve, 500)); // 0.5秒待機
-        //     return `AIによる「${target}」の分析結果（${prompt.substring(0,20)}...）。これはダミーの応答です。`;
-        // }
-
-    </script>
-    <script type="module">
-        // Import the functions you need from the SDKs you need
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.7.1/firebase-app.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.7.1/firebase-analytics.js";
-        // TODO: Add SDKs for Firebase products that you want to use
-        // https://firebase.google.com/docs/web/setup#available-libraries
-      
-        // Your web app's Firebase configuration
-        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-        const firebaseConfig = {
-          apiKey: "AIzaSyDWgctsuswlJJD2BIU0BbMQGrm_zYB2hH8",
-          authDomain: "newagent-oxrude.firebaseapp.com",
-          databaseURL: "https://newagent-oxrude.firebaseio.com",
-          projectId: "newagent-oxrude",
-          storageBucket: "newagent-oxrude.firebasestorage.app",
-          messagingSenderId: "616015489414",
-          appId: "1:616015489414:web:637e395eef0f8f7d02e407",
-          measurementId: "G-PYCN3G6QFW"
-        };
-      
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app);
+    }
       </script>
 </body>
 </html>
