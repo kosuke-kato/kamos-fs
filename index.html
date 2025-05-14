@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kamos FS プロトタイプ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* Kamos Design System (v0.4.0準拠 - 抜粋・簡易版) */
+        :root {
+            /* Colors (抜粋) */
+            --kds-color-primary: #3B82F6; /* blue-500 */
+            --kds-color-primary-hover: #2563EB; /* blue-600 */
+            --kds-color-text-default: #1F2937; /* gray-800 */
+            --kds-color-text-muted: #6B7280; /* gray-500 */
+            --kds-color-text-subtle: #9CA3AF; /* gray-400 */
+            --kds-color-background-body: #F3F4F6; /* gray-100 */
+            --kds-color-background-surface: #FFFFFF;
+            --kds-color-background-muted: #F9FAFB; /* gray-50 */
+            --kds-color-border-default: #D1D5DB; /* gray-300 */
+            --kds-color-border-subtle: #E5E7EB; /* gray-200 */
+            --kds-color-focus-ring: #A5B4FC; /* indigo-300 - focus ring */
+
+            /* Typography (抜粋) */
+            --kds-font-family-sans: 'Noto Sans JP', sans-serif;
+            
+            --kds-font-size-xs: 0.75rem; /* 12px */
+            --kds-font-size-sm: 0.875rem; /* 14px */
+            --kds-font-size-base: 1rem; /* 16px */
+            --kds-font-size-lg: 1.125rem; /* 18px */
+            --kds-font-size-xl: 1.25rem; /* 20px */
+            --kds-font-size-2xl: 1.5rem; /* 24px */
+            --kds-font-size-3xl: 1.875rem; /* 30px */
+            --kds-font-size-4xl: 2.25rem; /* 36px */
+
+            --kds-font-weight-normal: 400;
+            --kds-font-weight-medium: 500;
+            --kds-font-weight-bold: 700;
+
+            --kds-line-height-tight: 1.25;
+            --kds-line-height-snug: 1.375;
+            --kds-line-height-normal: 1.5;
+            --kds-line-height-relaxed: 1.625;
+
+            /* Spacing (抜粋 - 4pxベーススケール) */
+            --kds-space-1: 0.25rem;  /* 4px */
+            --kds-space-2: 0.5rem;   /* 8px */
+            --kds-space-3: 0.75rem;  /* 12px */
+            --kds-space-4: 1rem;     /* 16px */
+            --kds-space-5: 1.25rem;  /* 20px */
+            --kds-space-6: 1.5rem;   /* 24px */
+            --kds-space-8: 2rem;     /* 32px */
+            --kds-space-10: 2.5rem;  /* 40px */
+            --kds-space-12: 3rem;    /* 48px */
+
+            /* Border Radius (抜粋) */
+            --kds-border-radius-sm: 0.125rem; /* 2px */
+            --kds-border-radius-md: 0.375rem; /* 6px */
+            --kds-border-radius-lg: 0.5rem;  /* 8px */
+            --kds-border-radius-xl: 0.75rem; /* 12px */
+
+            /* Shadows (抜粋) */
+            --kds-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --kds-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --kds-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+            /* Transitions (抜粋) */
+            --kds-transition-duration: 150ms;
+            --kds-transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Global Styles */
+        body {
+            font-family: var(--kds-font-family-sans);
+            background-color: var(--kds-color-background-body);
+            color: var(--kds-color-text-default);
+            margin: 0;
+            padding: var(--kds-space-8);
+            line-height: var(--kds-line-height-normal);
+        }
+
+        .container {
+            max-width: 896px; /* approx max-w-4xl */
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Kamos Design System Inspired Components */
+        .kds-card {
+            background-color: var(--kds-color-background-surface);
+            border-radius: var(--kds-border-radius-lg);
+            box-shadow: var(--kds-shadow-lg);
+            padding: var(--kds-space-6);
+            margin-bottom: var(--kds-space-6);
+        }
+
+        .kds-title-page { /* For main page title */
+            font-size: var(--kds-font-size-4xl);
+            font-weight: var(--kds-font-weight-bold);
+            color: var(--kds-color-primary); /* Kamosのブランドカラーを意識 */
+            text-align: center;
+            margin-bottom: var(--kds-space-2);
+        }
+         .kds-title-page-description {
+            color: var(--kds-color-text-muted);
+            text-align: center;
+            margin-bottom: var(--kds-space-12);
+            font-size: var(--kds-font-size-base);
+        }
+
+
+        .kds-title-section { /* For card titles */
+            font-size: var(--kds-font-size-2xl);
+            font-weight: var(--kds-font-weight-bold);
+            color: var(--kds-color-text-default);
+            margin-bottom: var(--kds-space-4);
+        }
+
+        .kds-title-subsection { /* For table titles / subtitles within cards */
+            font-size: var(--kds-font-size-xl);
+            font-weight: var(--kds-font-weight-medium); /* KDSではsemiboldだが、ここではmediumに */
+            color: var(--kds-color-text-default);
+            margin-bottom: var(--kds-space-3);
+        }
+        
+        .kds-text-body {
+            font-size: var(--kds-font-size-sm);
+            color: var(--kds-color-text-muted);
+            margin-bottom: var(--kds-space-4);
+        }
+
+        .kds-label {
+            display: block;
+            font-size: var(--kds-font-size-sm);
+            font-weight: var(--kds-font-weight-medium);
+            color: var(--kds-color-text-default);
+            margin-bottom: var(--kds-space-1);
+        }
+
+        .kds-input,
+        .kds-textarea {
+            display: block;
+            width: 100%;
+            padding: var(--kds-space-2) var(--kds-space-3);
+            background-color: var(--kds-color-background-surface);
+            border: 1px solid var(--kds-color-border-default);
+            border-radius: var(--kds-border-radius-md);
+            box-shadow: var(--kds-shadow-sm);
+            font-size: var(--kds-font-size-sm);
+            line-height: var(--kds-line-height-normal);
+            transition: border-color var(--kds-transition-duration) var(--kds-transition-timing-function),
+                        box-shadow var(--kds-transition-duration) var(--kds-transition-timing-function);
+        }
+        .kds-textarea {
+            min-height: 80px; /* rows="4" 相当 */
+        }
+
+        .kds-input:focus,
+        .kds-textarea:focus {
+            outline: 2px solid transparent;
+            outline-offset: 2px;
+            border-color: var(--kds-color-primary);
+            box-shadow: 0 0 0 3px var(--kds-color-focus-ring);
+        }
+
+        .kds-button {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            padding: var(--kds-space-2) var(--kds-space-4);
+            border: 1px solid transparent;
+            border-radius: var(--kds-border-radius-md);
+            box-shadow: var(--kds-shadow-sm);
+            font-size: var(--kds-font-size-sm);
+            font-weight: var(--kds-font-weight-medium);
+            color: var(--kds-color-background-surface);
+            background-color: var(--kds-color-primary);
+            cursor: pointer;
+            transition: background-color var(--kds-transition-duration) var(--kds-transition-timing-function);
+            text-decoration: none;
+        }
+
+        .kds-button:hover {
+            background-color: var(--kds-color-primary-hover);
+        }
+        .kds-button:focus {
+            outline: 2px solid transparent;
+            outline-offset: 2px;
+            box-shadow: 0 0 0 3px var(--kds-color-focus-ring);
+        }
+
+        .kds-table-wrapper {
+            overflow-x: auto;
+        }
+        .kds-table {
+            min-width: 100%;
+            border-collapse: collapse; /* KDSでは通常 separate だが、ここではcollapse */
+            margin-bottom: var(--kds-space-4);
+        }
+
+        .kds-table th,
+        .kds-table td {
+            padding: var(--kds-space-3) var(--kds-space-4); /* px-6 py-3, py-4 相当に調整 */
+            text-align: left;
+            font-size: var(--kds-font-size-sm);
+            border-bottom: 1px solid var(--kds-color-border-subtle);
+        }
+
+        .kds-table th {
+            background-color: var(--kds-color-background-muted);
+            color: var(--kds-color-text-muted);
+            font-weight: var(--kds-font-weight-medium); /* KDSではfont-medium text-gray-500 uppercase tracking-wider */
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .kds-table td {
+            color: var(--kds-color-text-default);
+            /* whitespace-nowrap はケースバイケースなので削除 */
+        }
+        .kds-table td.kds-table-cell-aspect-label { /* 観点ラベルのセル */
+            font-weight: var(--kds-font-weight-medium);
+            background-color: var(--kds-color-background-muted);
+        }
+
+        .kds-result-section {
+            margin-top: var(--kds-space-8);
+        }
+        
+        .kds-matrix-cell-container { /* 各マトリックスセル内のコンテナ */
+            /* 必要に応じてスタイル追加 */
+        }
+
+        .kds-matrix-cell-title { /* 各マトリックスセル内の問い（タイトル） */
+            font-size: var(--kds-font-size-xs);
+            font-weight: var(--kds-font-weight-medium);
+            color: var(--kds-color-primary);
+            margin-bottom: var(--kds-space-1);
+        }
+        .kds-matrix-cell-content { /* 各マトリックスセル内のAI応答 */
+            font-size: var(--kds-font-size-sm);
+            color: var(--kds-color-text-muted);
+            line-height: var(--kds-line-height-relaxed);
+        }
+        
+        .hidden {
+            display: none;
+        }
+        .mt-4 {
+             margin-top: var(--kds-space-4);
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1 class="kds-title-page">Kamos FS プロトタイプ</h1>
+            <p class="kds-title-page-description">分析対象の情報を入力し、Kamos FSフレームワークに基づく分析結果のイメージを確認します。</p>
+        </header>
+
+        <div class="kds-card">
+            <h2 class="kds-title-section">分析対象の入力</h2>
+            <div>
+                <label for="analysis-target" class="kds-label">分析したいプロジェクトや事業の概要:</label>
+                <textarea id="analysis-target" name="analysis-target" class="kds-textarea" placeholder="例：地域活性化のための新しいコミュニティスペース運営事業"></textarea>
+            </div>
+            <div class="mt-4">
+                <button id="analyze-button" class="kds-button">分析実行</button>
+            </div>
+        </div>
+
+        <div id="result-area" class="kds-result-section hidden">
+            <h2 class="kds-title-section">Kamos FS 分析結果（イメージ）</h2>
+            
+            <div class="kds-card">
+                <h3 class="kds-title-subsection">Kamos D: プロジェクト全体像</h3>
+                <p class="kds-text-body">全体像をCAM, GSA, DTEの観点で整理します。</p>
+                <div class="kds-table-wrapper">
+                    <table class="kds-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 25%;">観点 (Aspect)</th>
+                                <th style="width: 25%;">CAM (規範・着眼点)</th>
+                                <th style="width: 25%;">GSA (方法論・プロセス)</th>
+                                <th style="width: 25%;">DTE (目標・実践領域)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="kamos-d-matrix">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="kds-card">
+                <h3 class="kds-title-subsection">Kamos IL: 関係性評価</h3>
+                <p class="kds-text-body">ステークホルダーの関係性をCAM, GSA, DTEの観点で評価します。</p>
+                <div class="kds-table-wrapper">
+                    <table class="kds-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 25%;">関係性 (Relationship)</th>
+                                <th style="width: 25%;">CAM (規範・着眼点)</th>
+                                <th style="width: 25%;">GSA (方法論・プロセス)</th>
+                                <th style="width: 25%;">DTE (目標・実践領域)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="kamos-il-matrix">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="kds-card">
+                <h3 class="kds-title-subsection">Kamos ES: エコシステム進化マップ</h3>
+                <p class="kds-text-body">エコシステムの進化をフェーズと観点のマトリックスで整理します。</p>
+                <div class="kds-table-wrapper">
+                    <table class="kds-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 25%;">観点 (Aspect)</th>
+                                <th style="width: 25%;">Phase 1: 再定義/準備期</th>
+                                <th style="width: 25%;">Phase 2: 構築/発信期</th>
+                                <th style="width: 25%;">Phase 3: 実践/展開期</th>
+                            </tr>
+                        </thead>
+                        <tbody id="kamos-es-matrix">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Kamos FSのフレームワーク定義（project-design.jsonから抜粋・簡略化）
+        const kamosFsFramework = {
+            "kamos-d": {
+                title: "Kamos D: プロジェクト全体像",
+                rows: [
+                    { id: "aspect_a", label: "目的/パーパス" },
+                    { id: "aspect_b", label: "コアバリュー" },
+                    { id: "aspect_c", label: "目指す美学/品質基準" },
+                    { id: "aspect_d", label: "参照する巨人/インスピレーション" },
+                    { id: "aspect_e", label: "独自性/ポジショニング" }
+                ],
+                columns: [
+                    { id: "cam", label: "CAM (規範・着眼点)" },
+                    { id: "gsa", label: "GSA (方法論・プロセス)" },
+                    { id: "dte", label: "DTE (目標・実践領域)" }
+                ],
+                prompts: { // 各セルに対応するプロンプト（問い）の例
+                    "aspect_a_cam": "この企画で「実現したいこと」は？ (より詳細なプロジェクトのビジョン、解決したい具体的な課題、ターゲットとする美意識のレベルなど)",
+                    "aspect_a_gsa": "どうやって「価値を生む」？ (具体的な共創手法、AIの活用範囲と役割、価値変容の具体的なプロセスステップなど)",
+                    "aspect_a_dte": "最終的に「何を作る」？目標は？ (具体的なアウトプットの仕様、提供する体験の詳細、定量的・定性的な目標値など)",
+                    "aspect_b_cam": "どんな「ゆずれない想い」がある？ (プロジェクトの倫理観、守りたい伝統や価値観、排除したい要素など)",
+                    "aspect_b_gsa": "何がどう「変わる」ことを目指す？ (ターゲット層の具体的な行動変容、社会システムの変化、意識変革の段階など)",
+                    "aspect_b_dte": "これは「誰のため」？ (具体的なペルソナ、受益者の範囲と優先順位、間接的な受益者など)",
+                    // ... 他のプロンプトも同様に定義 (以下簡略化のため省略)
+                }
+            },
+            "kamos-il": {
+                title: "Kamos IL: 関係性評価",
+                rows: [
+                  { "id": "rel_1", "label": "1. わたし ↔ パートナー" },
+                  { "id": "rel_2", "label": "2. パートナー ↔ クライアント" },
+                  { "id": "rel_3", "label": "3. クライアント ↔ 生活者" },
+                  { "id": "rel_4", "label": "4. 生活者 ↔ 社会" },
+                  { "id": "rel_5", "label": "5. 社会 ↔ わたし" },
+                  { "id": "rel_6", "label": "6. わたし ↔ クライアント" }
+                ],
+                columns: [
+                    { id: "cam", label: "CAM (規範・着眼点)" },
+                    { id: "gsa", label: "GSA (方法論・プロセス)" },
+                    { id: "dte", label: "DTE (目標・実践領域)" }
+                ],
+                prompts: { /* ... */ }
+            },
+            "kamos-es": {
+                title: "Kamos ES: エコシステム進化マップ",
+                rows: [
+                  { "id": "aspect_cam", "label": "CAM (価値観/規範)" },
+                  { "id": "aspect_gsa", "label": "GSA (プロセス/方法論)" },
+                  { "id": "aspect_dte", "label": "DTE (成果/現実)" },
+                  { "id": "aspect_stakeholder", "label": "主要ステークホルダー (役割/関係性)" },
+                  { "id": "aspect_challenge", "label": "主な挑戦 (課題/機会)" }
+                ],
+                columns: [
+                  { "id": "phase_1", "label": "Phase 1: 再定義/準備期" },
+                  { "id": "phase_2", "label": "Phase 2: 構築/発信期" },
+                  { "id": "phase_3", "label": "Phase 3: 実践/展開期" }
+                ],
+                prompts: { /* ... */ }
+            }
+        };
+
+        const analyzeButton = document.getElementById('analyze-button');
+        const analysisTargetInput = document.getElementById('analysis-target');
+        const resultArea = document.getElementById('result-area');
+
+        analyzeButton.addEventListener('click', async () => {
+            const targetText = analysisTargetInput.value.trim();
+            if (!targetText) {
+                // よりKDSらしいメッセージ表示を検討 (例: モーダルやインラインメッセージ)
+                alert('分析対象を入力してください。');
+                return;
+            }
+
+            resultArea.classList.remove('hidden');
+            
+            // Kamos D マトリックスの描画
+            renderMatrix('kamos-d-matrix', kamosFsFramework['kamos-d'], targetText);
+            // Kamos IL マトリックスの描画
+            renderMatrix('kamos-il-matrix', kamosFsFramework['kamos-il'], targetText);
+            // Kamos ES マトリックスの描画
+            renderMatrix('kamos-es-matrix', kamosFsFramework['kamos-es'], targetText);
+        });
+
+        /**
+         * 指定されたIDのtbody要素にマトリックスを描画する関数
+         * @param {string} tableBodyId - 描画対象のtbody要素のID
+         * @param {object} matrixData - マトリックスの行・列・プロンプト定義
+         * @param {string} analysisTarget - 分析対象のテキスト (将来的にAI連携時に使用)
+         */
+        async function renderMatrix(tableBodyId, matrixData, analysisTarget) {
+            const tableBody = document.getElementById(tableBodyId);
+            tableBody.innerHTML = ''; // 既存の内容をクリア
+
+            for (const row of matrixData.rows) {
+                const tr = document.createElement('tr');
+                
+                const tdAspect = document.createElement('td');
+                tdAspect.classList.add('kds-table-cell-aspect-label');
+                tdAspect.textContent = row.label;
+                tr.appendChild(tdAspect);
+
+                for (const col of matrixData.columns) {
+                    const tdCell = document.createElement('td');
+                    const cellId = `${row.id}_${col.id}`;
+                    
+                    // 各セルにタイトル（問い）と内容（AI応答のプレースホルダー）を生成
+                    const cellContainer = document.createElement('div');
+                    cellContainer.classList.add('kds-matrix-cell-container');
+
+                    const promptTitle = document.createElement('div');
+                    promptTitle.classList.add('kds-matrix-cell-title');
+                    // matrixData.prompts から対応するプロンプトを取得 (存在すれば)
+                    const promptText = matrixData.prompts && matrixData.prompts[cellId] ? matrixData.prompts[cellId] : `問い: ${row.label} × ${col.label}`;
+                    promptTitle.textContent = promptText.length > 50 ? promptText.substring(0, 50) + "..." : promptText; // 長すぎる場合は省略
+
+                    const aiResponsePlaceholder = document.createElement('div');
+                    aiResponsePlaceholder.classList.add('kds-matrix-cell-content');
+                    // ここで実際にGemini APIを呼び出し、結果を表示する (プロトタイプでは固定テキスト)
+                    // const response = await callGeminiApi(analysisTarget, promptText);
+                    // aiResponsePlaceholder.textContent = response;
+                    aiResponsePlaceholder.textContent = `[${analysisTarget}に関する${row.label}の${col.label}についてのAI分析結果がここに表示されます。これはプロトタイプのダミーテキストです。実際のAPI連携時には、より詳細な分析内容に置き換わります。例えば、具体的な戦略や考慮事項、潜在的なリスクなどが含まれるでしょう。]`;
+                    
+                    cellContainer.appendChild(promptTitle);
+                    cellContainer.appendChild(aiResponsePlaceholder);
+                    tdCell.appendChild(cellContainer);
+                    tr.appendChild(tdCell);
+                }
+                tableBody.appendChild(tr);
+            }
+        }
+
+        // ダミーのGemini API呼び出し関数 (将来的に実装)
+        // async function callGeminiApi(target, prompt) {
+        //     // ここでGoogle Cloud Functions経由でGemini APIを呼び出す処理を実装
+        //     console.log(`Calling Gemini API for target: "${target}" with prompt: "${prompt}"`);
+        //     // 実際のAPIコールをシミュレート
+        //     await new Promise(resolve => setTimeout(resolve, 500)); // 0.5秒待機
+        //     return `AIによる「${target}」の分析結果（${prompt.substring(0,20)}...）。これはダミーの応答です。`;
+        // }
+
+    </script>
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.7.1/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.7.1/firebase-analytics.js";
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+      
+        // Your web app's Firebase configuration
+        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+        const firebaseConfig = {
+          apiKey: "AIzaSyDWgctsuswlJJD2BIU0BbMQGrm_zYB2hH8",
+          authDomain: "newagent-oxrude.firebaseapp.com",
+          databaseURL: "https://newagent-oxrude.firebaseio.com",
+          projectId: "newagent-oxrude",
+          storageBucket: "newagent-oxrude.firebasestorage.app",
+          messagingSenderId: "616015489414",
+          appId: "1:616015489414:web:637e395eef0f8f7d02e407",
+          measurementId: "G-PYCN3G6QFW"
+        };
+      
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+      </script>
+</body>
+</html>
